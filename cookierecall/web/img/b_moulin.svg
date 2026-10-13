@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-4 -4 72 72" width="72" height="72">
+<defs>
+  <filter id="sh" x="-20%" y="-20%" width="140%" height="140%">
+    <feMorphology in="SourceAlpha" operator="dilate" radius="3" result="fat"/>
+    <feFlood flood-color="#FFF4DF"/><feComposite in2="fat" operator="in" result="rim"/>
+    <feGaussianBlur in="fat" stdDeviation="1.6" result="blur"/>
+    <feOffset in="blur" dy="2.2" result="off"/>
+    <feFlood flood-color="#3B2416" flood-opacity=".35"/><feComposite in2="off" operator="in" result="shadow"/>
+    <feMerge><feMergeNode in="shadow"/><feMergeNode in="rim"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+</defs>
+<g filter="url(#sh)">
+  <path d="M22 60l5-34h10l5 34z" fill="#FFF4DF" stroke="#C27F35" stroke-width="2"/>
+  <path d="M25 26l7-8 7 8z" fill="#C0573F"/>
+  <rect x="29" y="48" width="6" height="12" rx="3" fill="#5A3522"/>
+  <g transform="rotate(20 32 26)" fill="#7FC8E8" stroke="#4E9CC0" stroke-width="1.6">
+    <path d="M32 26L30 4h6z"/><path d="M32 26l22-2v6z"/><path d="M32 26l2 22h-6z"/><path d="M32 26L10 28v-6z"/>
+  </g><circle cx="32" cy="26" r="3.4" fill="#3B2416"/></g>
+</svg>

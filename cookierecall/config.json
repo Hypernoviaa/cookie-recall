@@ -1,0 +1,16 @@
+{
+    "sound": false,
+    "volume": 0.4,
+    "hud": true,
+    "hud_position": "top-right",
+    "hud_goal": true,
+    "hud_tiny": false,
+    "reduced_motion": false,
+    "show_bakery_on_home": true,
+    "bakery_collapsed": false,
+    "toolbar_link": true,
+    "new_cards_full_reward_per_day": 50,
+    "min_answer_seconds": 0.8,
+    "theme": true,
+    "language": "auto"
+}

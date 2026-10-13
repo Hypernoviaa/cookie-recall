@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-4 -4 72 72" width="72" height="72">
+<defs>
+  <filter id="sh" x="-20%" y="-20%" width="140%" height="140%">
+    <feMorphology in="SourceAlpha" operator="dilate" radius="3" result="fat"/>
+    <feFlood flood-color="#FFF4DF"/><feComposite in2="fat" operator="in" result="rim"/>
+    <feGaussianBlur in="fat" stdDeviation="1.6" result="blur"/>
+    <feOffset in="blur" dy="2.2" result="off"/>
+    <feFlood flood-color="#3B2416" flood-opacity=".35"/><feComposite in2="off" operator="in" result="shadow"/>
+    <feMerge><feMergeNode in="shadow"/><feMergeNode in="rim"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+</defs>
+<g filter="url(#sh)">
+  <path d="M32 10c-6-6-18-2-18 8-8 2-10 14-4 18-2 8 4 16 12 14 4 6 14 4 10-4z" fill="#F4A6B8"/>
+  <path d="M32 10c6-6 18-2 18 8 8 2 10 14 4 18 2 8-4 16-12 14-4 6-14 4-10-4z" fill="#EE8FA5"/>
+  <path d="M32 12v40M20 22c4 0 6 4 6 8M44 22c-4 0-6 4-6 8M16 36c4-2 8 0 10 4M48 36c-4-2-8 0-10 4" stroke="#C25E78" stroke-width="2.2" fill="none" stroke-linecap="round"/></g>
+</svg>

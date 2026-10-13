@@ -1,0 +1,75 @@
+/* Cookie Recall theme — component rules. Colours come from the CSS variables
+   injected next to this file (same tokens as the Qt windows). */
+
+html { background-color: var(--canvas); min-height: 100%; }
+/* some pages paint <body> with a colour computed before the theme loads */
+html body:not(.card) { background-color: var(--canvas) !important; }
+html body {
+  font-family: "CookieRecallFredoka", ui-rounded, "Segoe UI", system-ui, sans-serif;
+  letter-spacing: 0.1px;
+}
+/* never change the fonts the user chose for note fields */
+.field-container, .editing-area, .rich-text-editable, .plain-text-input, .CodeMirror, code, pre, kbd {
+  font-family: revert;
+}
+
+/* ------------------------------------------------------------ top toolbar */
+body.fancy .toolbar, .toolbar {
+  border-radius: 0 0 18px 18px;
+  background: var(--canvas-elevated);
+  box-shadow: 0 1px 0 var(--border), 0 6px 14px -10px var(--shadow);
+  position: relative;
+  overflow: hidden;
+  padding-top: 4px;
+}
+.toolbar::before { /* thin awning strip */
+  content: ""; position: absolute; left: 0; right: 0; top: 0; height: 4px;
+  background: repeating-linear-gradient(90deg, #8dbf6a 0 18px, #fff4df 18px 36px);
+  opacity: .95;
+}
+.hitem, body.fancy .hitem { border-radius: 999px; font-weight: 550; transition: background .15s, color .15s; }
+body.fancy .hitem:hover, .hitem:hover { background: var(--selected-bg); color: var(--fg); }
+.hitem#cookierecall { color: var(--accent-card); }
+
+/* ------------------------------------------------------------ deck list */
+table:has(tr.deck) {
+  border-radius: 18px;
+  background: var(--canvas-elevated);
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 10px 24px -18px var(--shadow);
+}
+th { color: var(--fg-subtle); font-weight: 600; }
+a.deck { font-weight: 550; }
+.current td, tr:hover:not(.top-level-drag-row) td { background: var(--selected-bg); }
+.current td:first-child, tr:hover:not(.top-level-drag-row) td:first-child { border-radius: 12px 0 0 12px; }
+.current td:last-child, tr:hover:not(.top-level-drag-row) td:last-child { border-radius: 0 12px 12px 0; }
+.new-count { color: var(--state-new); }
+.learn-count { color: var(--state-learn); }
+.review-count { color: var(--state-review); }
+.zero-count { color: var(--fg-faint); }
+#studiedToday { color: var(--fg-subtle); }
+.callout { border-radius: 14px; }
+
+/* ------------------------------------------------------------ overview */
+h3 { font-weight: 650; }
+#study {
+  border-radius: 999px; padding: 8px 22px; font-weight: 600; border: 0;
+  background: linear-gradient(var(--button-primary-gradient-start), var(--button-primary-gradient-end));
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--button-primary-bg) 60%, black);
+}
+#study:active { transform: translateY(2px); box-shadow: 0 2px 0 color-mix(in srgb, var(--button-primary-bg) 60%, black); }
+.descfont, .description { color: var(--fg-subtle); }
+
+/* ------------------------------------------------------------ buttons everywhere */
+button, .btn, input[type="button"], input[type="submit"] { border-radius: 10px; }
+#outer, .nightMode #outer { border-top-color: var(--border); }
+#middle button, .stat button { border-radius: 999px; }
+
+/* ------------------------------------------------------------ svelte pages (editor, stats, options...) */
+.container, .card, .graph, .titled-container, .container-fluid > .row > .col > div {
+  border-radius: 16px;
+}
+.editor-toolbar, .editor-field, .field-container { border-radius: 12px; }
+.label-name, .field-state, .collapse-label { color: var(--fg-subtle); }
+input:not([type=checkbox]):not([type=radio]), select, textarea { border-radius: 9px; }
+::selection { background: var(--highlight-bg); color: var(--highlight-fg); }
