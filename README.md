@@ -47,7 +47,7 @@ All thresholds are configurable.
 ## Install
 
 - **From AnkiWeb**: *Tools → Add-ons → Get Add-ons…* and paste the code shown on the add-on's AnkiWeb page.
-- **From a file**: download `cookierecall.ankiaddon` from the [Releases](../../releases), then double-click it (or *Tools → Add-ons → Install from file…*). Restart Anki.
+- **From a file**: download [`cookierecall.ankiaddon`](release/cookierecall.ankiaddon?raw=1), then double-click it (or *Tools → Add-ons → Install from file…*). Restart Anki.
 
 Your game is saved in your collection and syncs through AnkiWeb. Add-ons don't run on AnkiMobile or AnkiDroid, so mobile reviews don't bake cookies.
 
