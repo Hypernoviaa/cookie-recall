@@ -207,7 +207,7 @@ class CookieRecall:
     def rate_url(self) -> str:
         # installed from AnkiWeb -> the add-on folder name is its AnkiWeb id
         if self.folder.isdigit():
-            return f"https://ankiweb.net/shared/review/{self.folder}"
+            return f"https://ankiweb.net/shared/info/{self.folder}"  # page with AnkiWeb's "Rate This" button
         return "https://ankiweb.net/shared/addons?search=Cookie%20Recall"
 
     def should_ask_rating(self) -> bool:
