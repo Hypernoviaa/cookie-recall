@@ -279,10 +279,14 @@
     // keep it in the outer band of the screen so it never covers the card text
     const pos = CFG.hud_position || "top-right";
     const right = pos.endsWith("right"), top = pos.startsWith("top");
-    // between the HUD column (about 300 px wide) and the centre of the card
-    const span = Math.max(40, Math.min(200, innerWidth * 0.18));
-    const x = right ? innerWidth - 330 - 70 - Math.random() * span : 330 + Math.random() * span;
-    const y = top ? 70 + Math.random() * 150 : innerHeight - 140 - Math.random() * 150;
+    // next to the card, never on top of it: in the free band between the card and the counter
+    const qa = (document.getElementById("qa") || document.body).getBoundingClientRect();
+    const hudW = 270, size = 70;
+    let x, y;
+    if (right && innerWidth - hudW - qa.right >= size + 20) x = qa.right + 10 + Math.random() * (innerWidth - hudW - qa.right - size - 20);
+    else if (!right && qa.left - hudW >= size + 20) x = hudW + 10 + Math.random() * (qa.left - hudW - size - 20);
+    if (x !== undefined) y = Math.max(60, Math.min(innerHeight - 160, qa.top + Math.random() * Math.max(40, Math.min(qa.height, 260))));
+    else { x = Math.max(16, Math.min(innerWidth - size - 16, qa.left + Math.random() * Math.max(10, qa.width - size))); y = Math.min(innerHeight - 160, qa.bottom + 16 + Math.random() * 60); }
     b.style.left = Math.max(8, x) + "px";
     b.style.top = Math.max(8, y) + "px";
     b._tok = token;
