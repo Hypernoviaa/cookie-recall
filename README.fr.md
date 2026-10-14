@@ -60,6 +60,13 @@ gain = (3 + Σ bâtiments) × améliorations × succès × Savoir × série × d
 
 Les seuils se règlent dans la config de l'add-on.
 
+## Soutenir le projet
+
+Cookie Recall est gratuit et le restera. Si tu l'aimes :
+- ⭐ **Note-le sur AnkiWeb** (aussi possible depuis l'onglet *Statistiques* de la boulangerie).
+- ☕ **[Offre-moi un café sur Ko-fi](https://ko-fi.com/ankinovia)**.
+- 🐞 **[Signale un bug ou propose une idée](https://github.com/Hypernoviaa/cookie-recall/issues)**.
+
 ## Réglages
 
 Dans la boulangerie (onglet *Statistiques*) ou via *Outils → Modules → Cookie Recall → Config* : langue, thème Cookie Recall, sons, compteur pendant les révisions, position du compteur, animations réduites, boulangerie repliée. Le menu *Outils* propose aussi « Cookie Recall : ouvrir la boulangerie » et « Cookie Recall : remettre à zéro… ».

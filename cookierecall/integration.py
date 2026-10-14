@@ -29,7 +29,7 @@ from aqt.operations import QueryOp
 from aqt.overview import Overview
 from aqt.qt import QAction
 from aqt.reviewer import Reviewer
-from aqt.utils import askUser, tooltip
+from aqt.utils import askUser, openLink, tooltip
 
 from . import i18n, theme
 from . import palette as P
@@ -53,12 +53,15 @@ DEFAULT_CFG: dict[str, Any] = {
     "theme": True,
     "palette": "pistachio",
     "card_style": True,
+    "rate_prompt": "",
     "language": "auto",
     "new_cards_full_reward_per_day": 50,
     "min_answer_seconds": 0.8,
 }
 UI_SETTINGS = {"sound", "hud", "hud_position", "hud_tiny", "reduced_motion", "bakery_collapsed", "hud_goal", "theme", "language", "palette", "card_style"}
 LANGUAGES = {"auto", "fr", "en"}
+KOFI_URL = "https://ko-fi.com/ankinovia"
+ISSUES_URL = "https://github.com/Hypernoviaa/cookie-recall/issues"
 POSITIONS = {"top-right", "top-left", "bottom-right", "bottom-left"}
 
 
@@ -197,7 +200,32 @@ class CookieRecall:
         out["card_vars"] = P.card_vars(pid)
         names = P.NAMES.get(i18n.LANG, P.NAMES["en"])
         out["palettes"] = [{"id": k, "name": names[k], **P.swatch(k)} for k in P.PALETTES]
+        out["show_rate"] = self.should_ask_rating()
         return out
+
+    # ---- support links & rating
+    def rate_url(self) -> str:
+        # installed from AnkiWeb -> the add-on folder name is its AnkiWeb id
+        if self.folder.isdigit():
+            return f"https://ankiweb.net/shared/review/{self.folder}"
+        return "https://ankiweb.net/shared/addons?search=Cookie%20Recall"
+
+    def should_ask_rating(self) -> bool:
+        """Ask once the player clearly enjoys it: 300 reviews and 3 ovens cleared.
+        "Later" snoozes for 14 days; "never" / "done" stop for good."""
+        if not self.game or not mw.col:
+            return False
+        state = str(self.cfg().get("rate_prompt") or "")
+        if state in ("done", "never"):
+            return False
+        if state.startswith("later:"):
+            try:
+                if self.today() < int(state[6:]):
+                    return False
+            except ValueError:
+                pass
+        st = self.game.s["stats"]
+        return st["reviews_total"] >= 300 and st["jackpots"] >= 3
 
     # ---- pushing to webviews
     def push_update(self, events: list[dict] | None = None) -> None:
@@ -415,6 +443,24 @@ def dispatch(data: dict, context: Any) -> dict:
             return {"ok": False}
         mw.progress.single_shot(0, lambda: study_deck(did))
         return {"ok": True}
+    elif a == "open_link":
+        links = {"kofi": KOFI_URL, "rate": F.rate_url(), "issues": ISSUES_URL}
+        url = links.get(str(data.get("which")))
+        if not url:
+            return {"ok": False}
+        if data.get("which") == "rate":
+            F.write_cfg("rate_prompt", "done")
+        mw.progress.single_shot(0, lambda: openLink(url))
+        return {"ok": True, "cfg": F.ui_cfg()}
+    elif a == "rate_prompt":
+        choice = data.get("value")
+        if choice == "later":
+            F.write_cfg("rate_prompt", f"later:{F.today() + 14}")
+        elif choice == "never":
+            F.write_cfg("rate_prompt", "never")
+        else:
+            return {"ok": False}
+        return {"ok": True, "cfg": F.ui_cfg(), "snap": F.snap()}
     elif a == "open_bakery":
         mw.progress.single_shot(0, open_bakery)
         return {"ok": True}

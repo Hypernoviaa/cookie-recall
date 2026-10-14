@@ -14,5 +14,6 @@
     "theme": true,
     "language": "auto",
     "palette": "pistachio",
-    "card_style": true
+    "card_style": true,
+    "rate_prompt": ""
 }

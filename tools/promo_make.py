@@ -126,3 +126,22 @@ p.s{color:#b5c2b6}
 .top{position:absolute;left:0;top:14px;width:740px}
 .btns{position:absolute;left:50%;bottom:22px;width:420px;transform:translateX(-50%)}
 """)
+
+# 7. support banner ------------------------------------------------------------------------
+page("support", 1400, 250, """
+<div class=awn></div><div class=sc></div>
+<div class=row>
+  <img src=cookie.svg class=c>
+  <div class=tx><h2>Enjoying Cookie Recall?</h2><p class=s>It's free and will stay free. A rating or a coffee keeps the oven warm.</p></div>
+  <div class=bt><span class="b kofi">☕ Buy me a coffee on Ko-fi</span></div>
+</div>
+""", """
+body{background:#1e3b34;color:#f3efe2;position:relative}
+.row{position:absolute;left:70px;right:70px;top:92px;display:flex;align-items:center;gap:28px}
+.c{width:110px;height:110px;filter:drop-shadow(0 8px 10px rgba(0,0,0,.35))}
+.tx{flex:1}
+h2{color:#fff4df;font-size:44px}
+p.s{color:#cfdccd;max-width:none;font-size:21px}
+.b{display:inline-block;font-size:24px;font-weight:650;padding:18px 30px;border-radius:18px}
+.kofi{background:#ff5e5b;color:#fff;box-shadow:0 6px 0 #c94441}
+""")

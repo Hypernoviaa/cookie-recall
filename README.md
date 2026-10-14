@@ -90,6 +90,16 @@ python3 tools/simulate.py             # balance curves
 
 Design choices: only official `aqt.gui_hooks`; every hook is guarded so an add-on error can never block reviewing; state lives in `col.set_config` (a few KB, keeps the undo history, syncs); assets via `setWebExports` with no CDN; the UI runs in a closed Shadow DOM so card templates and the add-on can't break each other; Python is the single source of truth and validates every purchase; the theme swaps Anki's own colour tokens so Qt windows and web pages change together, with no inline scripts (the editor enforces a CSP).
 
+## Support
+
+Cookie Recall is free and will stay free. If you enjoy it:
+
+- ⭐ **Rate it on AnkiWeb**: it's what helps other learners find it. You can also do it from the bakery's *Stats* tab.
+- ☕ **[Buy me a coffee on Ko-fi](https://ko-fi.com/ankinovia)**.
+- 🐞 **[Report a bug or suggest an idea](https://github.com/Hypernoviaa/cookie-recall/issues)**.
+
+[![Support Cookie Recall on Ko-fi](assets/ankiweb/support.jpg)](https://ko-fi.com/ankinovia)
+
 ## Credits
 
 Fredoka font © The Fredoka Project Authors, SIL Open Font License 1.1.

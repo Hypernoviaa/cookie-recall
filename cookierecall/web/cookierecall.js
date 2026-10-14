@@ -473,7 +473,11 @@
         <div class="t">${esc(q.text)}</div><div class="bar"><i style="width:${pct(q.progress / q.n)}%"></i></div>
         <div class="p"><span>${fmt(q.progress)} / ${fmt(q.n)}</span><span>≈ ${fmt(q.reward * S.per_review_base)} ${t("cookies")}</span></div></div>`;
     }).join("");
-    return `<section class="today">${oven}<div><div class="tickets">${tickets}</div></div></section>`;
+    const rate = CFG.show_rate
+      ? `<div class="rate-ask"><img src="${IMG("a_star")}" alt=""><div class="rt"><b>${t("rate_q")}</b><span>${t("rate_q_sub")}</span></div>
+          <button class="btn" data-link="rate">⭐ ${t("rate_btn")}</button><button class="btn ghost" data-rate="later">${t("later")}</button><button class="lnk" data-rate="never">${t("no_thanks")}</button></div>`
+      : "";
+    return `${rate}<section class="today">${oven}<div><div class="tickets">${tickets}</div></div></section>`;
   }
 
   function renderTabs() {
@@ -598,6 +602,8 @@
       <button class="toggle" data-cycle-pos aria-pressed="true"><i></i>${t("set_pos", { x: t({ "top-right": "pos_tr", "top-left": "pos_tl", "bottom-right": "pos_br", "bottom-left": "pos_bl" }[CFG.hud_position || "top-right"]) })}</button>
       <button class="toggle" data-cycle-lang aria-pressed="true"><i></i>${t("set_lang", { x: t("lang_" + (CFG.language || "auto")) })}</button>
     </div>
+    <div class="support"><h3>${t("support_h")}</h3><p>${t("support_p")}</p>
+      <div class="row"><button class="btn" data-link="rate">⭐ ${t("rate_btn")}</button><button class="btn kofi" data-link="kofi">☕ ${t("kofi_btn")}</button><button class="btn ghost" data-link="issues">🐞 ${t("bug_btn")}</button></div></div>
     <p class="note">${esc(t("note", { n: CFG.new_cards_full_reward_per_day ?? 50 }))}</p>`;
   }
 
@@ -693,6 +699,12 @@
         return;
       }
       if (d.setting) { await act("setting", { key: d.setting, value: !CFG[d.setting] }); return; }
+      if (d.link) {
+        const res = await act("open_link", { which: d.link });
+        if (res && res.ok && d.link === "rate") { CFG.show_rate = false; renderBakery(); }
+        return;
+      }
+      if (d.rate) { await act("rate_prompt", { value: d.rate }); return; }
       if (d.palette) {
         const res = await act("setting", { key: "palette", value: d.palette });
         if (res && res.ok) { applyPalette(CFG.palette_vars); renderBakery(); }

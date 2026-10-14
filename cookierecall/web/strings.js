@@ -2,6 +2,15 @@
    {name} placeholders are filled by t(); values may contain simple HTML. */
 window.COOKIERECALL_STRINGS = {
   fr: {
+    rate_q: "Tu aimes Cookie Recall ?",
+    rate_q_sub: "Une note sur AnkiWeb aide d'autres étudiants à le découvrir. Ça prend 10 secondes.",
+    rate_btn: "Noter sur AnkiWeb",
+    later: "Plus tard",
+    no_thanks: "Non merci",
+    support_h: "Soutenir Cookie Recall",
+    support_p: "Cookie Recall est gratuit et le restera. Si tu l'aimes, une note sur AnkiWeb ou un café sur Ko-fi m'aide énormément à continuer de l'améliorer.",
+    kofi_btn: "M'offrir un café",
+    bug_btn: "Signaler un bug",
     study: "Réviser",
     study_tip: "Commencer la révision de ce paquet",
     up_to_date: "à jour",
@@ -134,6 +143,15 @@ window.COOKIERECALL_STRINGS = {
     freeze_bought_b: "Ta série est protégée pour un jour manqué.",
   },
   en: {
+    rate_q: "Enjoying Cookie Recall?",
+    rate_q_sub: "A rating on AnkiWeb helps other learners find it. It takes 10 seconds.",
+    rate_btn: "Rate on AnkiWeb",
+    later: "Later",
+    no_thanks: "No thanks",
+    support_h: "Support Cookie Recall",
+    support_p: "Cookie Recall is free and will stay free. If you enjoy it, a rating on AnkiWeb or a coffee on Ko-fi goes a long way in helping me keep improving it.",
+    kofi_btn: "Buy me a coffee",
+    bug_btn: "Report a bug",
     study: "Study",
     study_tip: "Start reviewing this deck",
     up_to_date: "done",
