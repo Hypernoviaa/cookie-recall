@@ -15,5 +15,9 @@
     "language": "auto",
     "palette": "pistachio",
     "card_style": true,
-    "rate_prompt": ""
+    "rate_prompt": "",
+    "quick_add": true,
+    "qa_last_deck": 0,
+    "qa_last_notetype": 0,
+    "full_home": true
 }

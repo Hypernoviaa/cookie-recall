@@ -27,11 +27,11 @@ from aqt import gui_hooks, mw
 from aqt.deckbrowser import DeckBrowser
 from aqt.operations import QueryOp
 from aqt.overview import Overview
-from aqt.qt import QAction
+from aqt.qt import QAction, QWidget
 from aqt.reviewer import Reviewer
 from aqt.utils import askUser, openLink, tooltip
 
-from . import i18n, theme
+from . import i18n, quickadd, theme
 from . import palette as P
 from .game import Game, fmt_num
 
@@ -54,11 +54,15 @@ DEFAULT_CFG: dict[str, Any] = {
     "palette": "pistachio",
     "card_style": True,
     "rate_prompt": "",
+    "quick_add": True,
+    "full_home": True,
+    "qa_last_deck": 0,
+    "qa_last_notetype": 0,
     "language": "auto",
     "new_cards_full_reward_per_day": 50,
     "min_answer_seconds": 0.8,
 }
-UI_SETTINGS = {"sound", "hud", "hud_position", "hud_tiny", "reduced_motion", "bakery_collapsed", "hud_goal", "theme", "language", "palette", "card_style"}
+UI_SETTINGS = {"sound", "hud", "hud_position", "hud_tiny", "reduced_motion", "bakery_collapsed", "hud_goal", "theme", "language", "palette", "card_style", "full_home", "quick_add"}
 LANGUAGES = {"auto", "fr", "en"}
 KOFI_URL = "https://ko-fi.com/ankinovia"
 ISSUES_URL = "https://github.com/Hypernoviaa/cookie-recall/issues"
@@ -319,6 +323,7 @@ def on_did_answer(reviewer: Reviewer, card, ease: int) -> None:
 
 @safe()
 def on_state_change(new_state: str, old_state: str) -> None:
+    quickadd.restore_shortcuts()  # never leave Anki's shortcuts off if a screen changes under the panel
     if old_state != "review" or not F.ready():
         return
     events = F.game.on_clear_check(F.due_left(), F.today())
@@ -360,10 +365,14 @@ def on_set_content(web_content, context) -> None:
         "events": F.take_queued() if mode != "hud" else [],
         "scroll": F.scroll_next if mode == "bakery" else False,
         "lang": i18n.LANG,
+        "home": home_payload() if mode == "bakery" and cfg["full_home"] else None,
     }
     if mode == "bakery":
         F.scroll_next = False
         web_content.body += '<div id="cookierecall-root"></div>'
+        if boot["home"] is not None:
+            # the all-in-one home replaces Anki's deck table and "studied today" line
+            web_content.head += "<style>body > center, body > #studiedToday { display: none !important; } body { margin: 0 !important; }</style>"
     elif mode == "mini":
         web_content.body += '<div id="cookierecall-root" style="text-align:center"></div>'
     web_content.head += f"<script>window.COOKIERECALL_BOOT = {_js(boot)};</script>"
@@ -428,6 +437,11 @@ def dispatch(data: dict, context: Any) -> dict:
             if isinstance(context, DeckBrowser):
                 mw.progress.single_shot(50, mw.deckBrowser.refresh)
             tooltip(i18n.msg("lang_restart"))
+        if key == "full_home":
+            if not value:
+                set_native_bars(True)
+                _home_shortcuts(False)
+            mw.progress.single_shot(50, mw.deckBrowser.refresh)
         if key == "palette":
             mw.progress.single_shot(80, lambda: theme.set_palette(value))
         if key == "theme":
@@ -461,6 +475,62 @@ def dispatch(data: dict, context: Any) -> dict:
         else:
             return {"ok": False}
         return {"ok": True, "cfg": F.ui_cfg(), "snap": F.snap()}
+    elif a == "qa_init":
+        quickadd.opened()
+        return quickadd.init_payload(F.cfg())
+    elif a == "qa_add":
+        res = quickadd.add(data)
+        if res.get("ok"):
+            conf = F.cfg()
+            conf["qa_last_deck"] = int(data.get("deck"))
+            conf["qa_last_notetype"] = int(data.get("notetype"))
+            mw.addonManager.writeConfig(MODULE, conf)
+        return res
+    elif a == "qa_new_deck":
+        return quickadd.new_deck(data.get("name"))
+    elif a == "qa_close":
+        n = quickadd.closed()
+        return {"ok": True, "added": n}
+    elif a == "qa_full":
+        mw.progress.single_shot(0, quickadd.open_full_editor)
+        return {"ok": True}
+    elif a == "deck_open":
+        did = _deck_arg(data)
+        if did is None:
+            return {"ok": False}
+        mw.progress.single_shot(0, lambda: mw.deckBrowser.set_current_deck(did))
+        return {"ok": True}
+    elif a == "deck_collapse":
+        did = _deck_arg(data)
+        if did is None:
+            return {"ok": False}
+        mw.progress.single_shot(0, lambda: mw.deckBrowser._collapse(did))
+        return {"ok": True}
+    elif a == "deck_options":
+        did = _deck_arg(data)
+        if did is None:
+            return {"ok": False}
+        mw.progress.single_shot(0, lambda: mw.deckBrowser._showOptions(str(did)))
+        return {"ok": True}
+    elif a == "deck_create":
+        res = quickadd.new_deck(data.get("name"))
+        if res.get("ok"):
+            mw.progress.single_shot(50, mw.deckBrowser.refresh)
+        return res
+    elif a == "nav":
+        actions = {
+            "browse": mw.onBrowse,
+            "stats": mw.onStats,
+            "sync": mw.on_sync_button_clicked,
+            "import": mw.onImport,
+            "shared": lambda: mw.deckBrowser._onShared(),
+            "add_full": mw.onAddCard,
+        }
+        fn = actions.get(str(data.get("to")))
+        if not fn:
+            return {"ok": False}
+        mw.progress.single_shot(0, fn)
+        return {"ok": True}
     elif a == "open_bakery":
         mw.progress.single_shot(0, open_bakery)
         return {"ok": True}
@@ -473,6 +543,84 @@ def dispatch(data: dict, context: Any) -> dict:
 
 
 # --------------------------------------------------------------------------- UI entry points
+def _deck_arg(data: dict):
+    try:
+        did = int(data.get("did"))
+    except (TypeError, ValueError):
+        return None
+    return did if mw.col.decks.get(did, default=False) else None
+
+
+def home_payload() -> dict:
+    """Deck tree + small facts for the all-in-one home screen."""
+    col = mw.col
+    current = int(col.decks.get_current_id())
+
+    def node(n, level):
+        return {
+            "id": int(n.deck_id),
+            "name": n.name,
+            "level": level,
+            "new": n.new_count,
+            "learn": n.learn_count,
+            "review": n.review_count,
+            "collapsed": bool(n.collapsed),
+            "filtered": bool(n.filtered),
+            "current": int(n.deck_id) == current,
+            "children": [node(c, level + 1) for c in n.children],
+        }
+
+    tree = col.sched.deck_due_tree()
+    decks = [node(c, 0) for c in tree.children]
+    # hide the empty "Default" deck like Anki does when other decks exist
+    if len(decks) > 1:
+        decks = [d for d in decks if not (d["id"] == 1 and not d["children"] and not col.find_cards("did:1"))]
+    return {"decks": decks, "studied": col.studied_today()}
+
+
+def set_native_bars(visible: bool) -> None:
+    """On the all-in-one home screen, Anki's own top and bottom bars are replaced by ours."""
+    for w in (getattr(mw, "toolbarWeb", None), getattr(mw, "bottomWeb", None)):
+        if w is not None:
+            QWidget.setVisible(w, visible)
+
+
+_home_keys: list = []
+
+
+def _home_shortcuts(take_over: bool) -> None:
+    """On the home screen, A opens the in-window Add panel and S studies directly:
+    Anki's global A / S shortcuts are paused there and restored everywhere else."""
+    global _home_keys
+    from aqt.qt import QShortcut
+
+    for sc in _home_keys:
+        try:
+            sc.setEnabled(True)
+        except RuntimeError:
+            pass
+    _home_keys = []
+    if take_over:
+        for sc in mw.findChildren(QShortcut):
+            if sc.isEnabled() and sc.key().toString() in ("A", "S"):
+                sc.setEnabled(False)
+                _home_keys.append(sc)
+
+
+@safe()
+def on_deck_browser_rendered(_browser) -> None:
+    on = F.cfg()["full_home"] and F.cfg()["show_bakery_on_home"]
+    set_native_bars(not on)
+    _home_shortcuts(on)
+
+
+@safe()
+def on_state_will_change_bars(new_state: str, old_state: str) -> None:
+    if new_state != "deckBrowser":
+        set_native_bars(True)
+        _home_shortcuts(False)
+
+
 def study_deck(did: int) -> None:
     """One click from the deck list straight into reviews (skips the overview screen)."""
     if not mw.col:
@@ -494,8 +642,19 @@ def open_bakery() -> None:
         mw.moveToState("deckBrowser")
 
 
+def on_toolbar_add() -> None:
+    """Toolbar "Add": open the in-window panel on the deck list / deck page, the normal window elsewhere."""
+    if F.cfg()["quick_add"] and mw.state in ("deckBrowser", "overview"):
+        web = mw.deckBrowser.web if mw.state == "deckBrowser" else mw.overview.web
+        web.eval("window.CookieRecall && CookieRecall.openQuickAdd ? CookieRecall.openQuickAdd() : pycmd('cookierecall:{\"a\":\"qa_full\"}')")
+    else:
+        mw.onAddCard()
+
+
 @safe()
 def on_toolbar_links(links: list[str], toolbar) -> None:
+    if F.cfg()["quick_add"] and "add" in getattr(toolbar, "link_handlers", {}):
+        toolbar.link_handlers["add"] = on_toolbar_add
     if not F.cfg()["toolbar_link"]:
         return
     links.append(toolbar.create_link("cookierecall", i18n.msg("toolbar"), open_bakery, tip=i18n.msg("toolbar_tip"), id="cookierecall"))
@@ -543,6 +702,8 @@ def setup() -> None:
     gui_hooks.reviewer_will_answer_card.append(on_will_answer)
     gui_hooks.reviewer_did_answer_card.append(on_did_answer)
     gui_hooks.state_will_change.append(on_state_change)
+    gui_hooks.state_will_change.append(on_state_will_change_bars)
+    gui_hooks.deck_browser_did_render.append(on_deck_browser_rendered)
     gui_hooks.webview_will_set_content.append(on_set_content)
     gui_hooks.webview_did_receive_js_message.append(on_js_message)
     gui_hooks.top_toolbar_did_init_links.append(on_toolbar_links)

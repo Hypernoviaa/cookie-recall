@@ -9,6 +9,8 @@ Les cookies ne se gagnent qu'en révisant tes cartes, et tout le jeu reste à l'
 - **Partout ailleurs** : le *thème Cookie Recall* habille tout Anki dans le même univers (barre du haut, liste des paquets, ajout de cartes, navigateur, statistiques, options de paquet, menus), en clair comme en sombre. Il ne touche jamais au contenu de tes cartes et se désactive d'un clic.
 
 Et aussi :
+- **Accueil tout-en-un** : tes paquets, Ajouter, Parcourir, Statistiques et Synchroniser sont directement dans la boulangerie, à côté de ta jarre à cookies ; la vitrine, la boutique, les missions et les succès juste en dessous. Les barres d'Anki s'effacent sur cet écran.
+- **Ajouter des cartes sans quitter l'écran** : touche **A** (ou le bouton Ajouter), un panneau glisse sur le côté : paquet, type de note, tu tapes, Ctrl+Entrée, carte suivante. Aucune fenêtre en plus. L'éditeur complet reste à un clic pour les images et l'audio.
 - **Réviser en un clic** : une carte « Réviser » au-dessus de tes paquets (ou la touche **S**) et un bouton ▶ Réviser sur chaque paquet t'emmènent directement aux révisions, sans passer par l'écran intermédiaire.
 - **Des cartes plus belles** : les cartes au style par défaut deviennent une fiche papier posée sur un bureau, avec une police plus agréable et des boutons de réponse colorés. Les cartes qui ont leur propre style restent exactement comme elles sont.
 - **5 palettes de couleurs** : Pistache, Framboise, Myrtille, Chocolat et Lavande, pour la boulangerie, le compteur, les cartes et tout le thème d'Anki (bouton 🎨 sur le store).

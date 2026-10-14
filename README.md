@@ -5,14 +5,15 @@ You can't click the cookie: every review bakes cookies. Buy Grannies, Wood ovens
 
 English & French · Anki Desktop 23.10+ (tested on 26.9) · light and dark mode · [Version française](README.fr.md)
 
-![The bakery on the deck list](screenshots/bakery.png)
+![The all-in-one home](screenshots/home.png)
 
 ## What you get
 
 - **While reviewing**: a small counter in a corner, with "+N" on every answer, your combo, your next purchase and the golden cookie to catch.
-- **On the deck list**: the full bakery, with the display shelves, the shop, daily missions, achievements, diplomas and stats.
+- **All-in-one home**: your decks, Add, Browse, Stats and Sync live right inside the bakery, next to your cookie jar, with the display shelves, the shop, daily missions, achievements, diplomas and stats below. Anki's own top and bottom bars step aside on that screen.
+- **Add cards without leaving**: press **A** (or the Add button) and a side panel slides in: pick the deck and note type, type, Ctrl+Enter, next card. No extra window. The full editor is one click away for images and audio.
 - **On a deck's page**: a one-line strip showing your cookies.
-- **One-click studying**: a "Study now" card above your decks (or press **S**) and a ▶ Study button on every deck row take you straight into reviews, no overview screen in between.
+- **One-click studying**: the "Study now" card (or press **S**) and a ▶ button on every deck take you straight into reviews, no overview screen in between.
 - **Better-looking cards**: plain cards become a paper card on a soft desk, with a nicer font and coloured answer buttons. Cards with their own custom styling are left exactly as they are.
 - **5 colour palettes**: Pistachio, Raspberry, Blueberry, Chocolate and Lavender, for the bakery, the counter, the cards and the whole Anki theme (🎨 button on the awning).
 - **Cookie Recall theme**: re-skins all of Anki in the same universe (top bar, deck list, Add cards, Browser, Statistics, Deck options, menus). It never touches your card content and can be turned off in one click.

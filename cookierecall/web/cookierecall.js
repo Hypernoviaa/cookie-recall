@@ -419,8 +419,9 @@
     const d = S.day;
     const sub = d.cleared ? t("mini_cleared", { n: pl(S.streak.count, "day") }) : t("mini_sub", { per: fmt(S.per_review_base), today: fmt(d.baked) });
     app.innerHTML = `<div class="mini"><img src="${IMG("cookie")}" alt=""><div class="grow"><div class="cnt num">${fmt(S.cookies)} ${t("cookies")}</div><div class="sub">${esc(sub)}</div></div>
-      <button class="btn" data-go>${t("bakery")}</button></div>`;
+      ${CFG.quick_add !== false ? `<button class="btn ghost" data-qa-open>＋ ${t("qa_short")}</button>` : ""}<button class="btn" data-go>${t("bakery")}</button></div>`;
     app.querySelector("[data-go]").addEventListener("click", () => send("open_bakery"));
+    const qb = app.querySelector("[data-qa-open]"); if (qb) qb.addEventListener("click", openQuickAdd);
   }
 
   // =================================================================== BAKERY
@@ -598,7 +599,7 @@
     </div>
     <div class="settings" id="settings"><h3>${t("settings")}</h3>
       <div class="swatches"><span>${t("set_palette")}</span>${(CFG.palettes || []).map((p) => `<button class="sw" data-palette="${p.id}" aria-pressed="${(CFG.palette || "pistachio") === p.id}" title="${esc(p.name)}" aria-label="${esc(p.name)}"><i style="background:${p.board}"></i><i style="background:${p.accent}"></i></button>`).join("")}</div>
-      ${tog("sound", t("set_sound"))}${tog("hud", t("set_hud"))}${tog("reduced_motion", t("set_motion"))}${tog("theme", t("set_theme"))}
+      ${tog("sound", t("set_sound"))}${tog("hud", t("set_hud"))}${tog("reduced_motion", t("set_motion"))}${tog("theme", t("set_theme"))}${tog("full_home", t("set_full_home"))}
       <button class="toggle" data-cycle-pos aria-pressed="true"><i></i>${t("set_pos", { x: t({ "top-right": "pos_tr", "top-left": "pos_tl", "bottom-right": "pos_br", "bottom-left": "pos_bl" }[CFG.hud_position || "top-right"]) })}</button>
       <button class="toggle" data-cycle-lang aria-pressed="true"><i></i>${t("set_lang", { x: t("lang_" + (CFG.language || "auto")) })}</button>
     </div>
@@ -607,8 +608,105 @@
     <p class="note">${esc(t("note", { n: CFG.new_cards_full_reward_per_day ?? 50 }))}</p>`;
   }
 
+
+  // =================================================================== ALL-IN-ONE HOME
+  const HOME = BOOT.home || null;
+  let homeNewDeck = false;
+
+  function flatDecks(list, out) {
+    (list || []).forEach((d) => { out.push(d); if (!d.collapsed) flatDecks(d.children, out); });
+    return out;
+  }
+  function deckDue(d) { return d.new + d.learn + d.review; }
+
+  function renderDecks() {
+    const rows = flatDecks(HOME.decks, []);
+    const all = [];
+    (function walk(l) { (l || []).forEach((d) => { all.push(d); walk(d.children); }); })(HOME.decks);
+    const current = all.find((d) => d.current && deckDue(d) > 0);
+    const best = all.filter((d) => d.level === 0).sort((a, b) => deckDue(b) - deckDue(a))[0];
+    const target = current || (best && deckDue(best) > 0 ? best : null);
+    const cnt = (n, cls) => `<span class="cnt-${cls} ${n ? "" : "zero"}">${fmt(n)}</span>`;
+    const list = rows.length
+      ? rows.map((d) => `<div class="drow ${d.current ? "cur" : ""}" style="--lvl:${d.level}">
+          <span class="dname">${d.children.length ? `<button class="caret" data-collapse-deck="${d.id}" aria-label="${esc(t(d.collapsed ? "expand" : "collapse"))}">${d.collapsed ? "▸" : "▾"}</button>` : `<span class="caret-sp"></span>`}
+            <button class="dlink ${d.filtered ? "filt" : ""}" data-open-deck="${d.id}" title="${esc(t("deck_open_tip"))}">${esc(d.name)}</button></span>
+          <span class="dcounts" title="${esc(t("counts_tip"))}">${cnt(d.new, "new")}${cnt(d.learn, "learn")}${cnt(d.review, "rev")}</span>
+          ${deckDue(d) > 0 ? `<button class="dplay" data-study="${d.id}" aria-label="${esc(t("study"))}">▶</button>` : `<span class="ddone" title="${esc(t("up_to_date"))}">✓</span>`}
+          <button class="dmore" data-deck-opts="${d.id}" aria-label="${esc(t("deck_more"))}">⋯</button>
+        </div>`).join("")
+      : `<div class="empty">${t("no_decks")}</div>`;
+    const cta = target
+      ? `<div class="cta"><div class="t"><b>${esc(target.name)}</b><small>${esc(plt(deckDue(target), "cards_due"))} · <kbd>S</kbd></small></div><button class="btn big" data-study="${target.id}">▶ ${t("study_now")}</button></div>`
+      : `<div class="cta done"><img src="${IMG("a_check")}" alt=""><div class="t"><b>${t("all_done")}</b><small>${t("all_done_sub")}</small></div></div>`;
+    return `<section class="decks">
+      ${cta}
+      <div class="dhead"><h3>${t("your_decks")}</h3>
+        <span class="legend"><i class="cnt-new">●</i>${t("c_new")} <i class="cnt-learn">●</i>${t("c_learn")} <i class="cnt-rev">●</i>${t("c_rev")}</span></div>
+      <div class="dlist">${list}</div>
+      ${homeNewDeck ? `<div class="newdeck"><input type="text" data-newdeck placeholder="${esc(t("qa_new_deck_ph"))}"><button class="btn" data-mkdeck>${t("qa_create")}</button><button class="lnk" data-cancel-deck>${t("cancel")}</button></div>` : ""}
+      <div class="dactions">
+        <button class="dpill" data-new-deck>＋ ${t("new_deck")}</button>
+        <button class="dpill" data-nav="import">⇪ ${t("import")}</button>
+        <button class="dpill" data-nav="shared">⇩ ${t("shared")}</button>
+      </div>
+      <div class="studied">${esc(HOME.studied || "")}</div>
+    </section>`;
+  }
+
+  function renderNav() {
+    const b = (to, icon, label, extra) => `<button class="nav" ${to}>${icon}<span>${label}</span>${extra || ""}</button>`;
+    return `<nav class="topnav">
+      ${b('data-qa-open', "＋", t("nav_add"), "<kbd>A</kbd>")}
+      ${b('data-nav="browse"', "🔎", t("nav_browse"))}
+      ${b('data-nav="stats"', "📊", t("nav_stats"))}
+      ${b('data-nav="sync"', "⟳", t("nav_sync"))}
+      <span class="sp"></span>
+      <span class="jar"><img src="${IMG("cookie")}" alt=""><b class="num">${fmt(S.cookies)}</b></span>
+      ${b('data-paint', "🎨", t("nav_colours"))}
+    </nav>`;
+  }
+
+  function renderHome() {
+    let body = "";
+    if (tab === "ach") body = renderAch();
+    else if (tab === "dip") body = renderDip();
+    else if (tab === "stats") body = renderStats();
+    else body = renderShop();
+    app.innerHTML = `<div class="board home ${S.frenzy.left > 0 ? "frenzy-on" : ""} ${RM() ? "calm" : ""}">
+      <header class="awning"><div class="stripes"></div><div class="scallops"></div>
+        <div class="sign"><img src="${IMG("cookie")}" alt="">Cookie Recall</div></header>
+      ${renderNav()}
+      <div class="split">${renderDecks()}<div class="hero-col">${renderHero()}</div></div>
+      ${renderToday()}${renderTabs()}<div class="panel" role="tabpanel">${body}</div></div>`;
+    const inp = root.querySelector("[data-newdeck]");
+    if (inp) inp.focus();
+  }
+
+  async function homeClick(e) {
+    const el = e.target.closest && e.target.closest("[data-study],[data-open-deck],[data-collapse-deck],[data-deck-opts],[data-nav],[data-new-deck],[data-mkdeck],[data-cancel-deck],[data-qa-open]");
+    if (!el) return false;
+    const d = el.dataset;
+    if (d.study) { send("study", { did: Number(d.study) }); return true; }
+    if (d.openDeck) { send("deck_open", { did: Number(d.openDeck) }); return true; }
+    if (d.collapseDeck) { send("deck_collapse", { did: Number(d.collapseDeck) }); return true; }
+    if (d.deckOpts) { send("deck_options", { did: Number(d.deckOpts) }); return true; }
+    if (d.nav) { send("nav", { to: d.nav }); return true; }
+    if ("qaOpen" in d) { openQuickAdd(); return true; }
+    if ("newDeck" in d) { homeNewDeck = true; renderBakery(); return true; }
+    if ("cancelDeck" in d) { homeNewDeck = false; renderBakery(); return true; }
+    if ("mkdeck" in d) {
+      const inp = root.querySelector("[data-newdeck]");
+      const res = await send("deck_create", { name: inp ? inp.value : "" });
+      if (!res || !res.ok) SFX.no();
+      return true;
+    }
+    return false;
+  }
+
   function renderBakery() {
     if (!S) return;
+    if (HOME && !CFG.bakery_collapsed) { renderHome(); return; }
     const collapsed = !!CFG.bakery_collapsed;
     const head = `<header class="awning"><div class="stripes"></div><div class="scallops"></div>
       <div class="sign"><img src="${IMG("cookie")}" alt="">Cookie Recall</div>
@@ -668,6 +766,7 @@
   function wireBakery() {
     root.addEventListener("click", async (e) => {
       if (confirmOpen) return;
+      if (HOME && !(e.target.closest && e.target.closest(".qa-wrap")) && await homeClick(e)) return;
       const el = e.target.closest && e.target.closest("button, [data-shelf]");
       if (!el) return;
       const d = el.dataset;
@@ -731,6 +830,175 @@
   }
 
 
+
+  // =================================================================== QUICK ADD (in-window panel)
+  let QA = null; // { decks, notetypes, deck, notetype, open, recent: [] }
+  async function openQuickAdd() {
+    if (QA && QA.open) { focusFirstField(); return; }
+    const res = await send("qa_init");
+    if (!res || !res.ok) { send("qa_full"); return; }
+    QA = { ...res, open: true, recent: [], added: 0 };
+    renderQuickAdd();
+  }
+
+  function qaModel() { return (QA.notetypes || []).find((n) => n.id === QA.notetype) || QA.notetypes[0]; }
+
+  function renderQuickAdd() {
+    let wrap = root.querySelector(".qa-wrap");
+    if (!wrap) {
+      wrap = document.createElement("div");
+      wrap.className = "qa-wrap" + (RM() ? " calm" : "");
+      root.appendChild(wrap);
+      wrap.addEventListener("click", onQaClick);
+      wrap.addEventListener("keydown", onQaKey);
+      wrap.addEventListener("paste", onQaPaste);
+      wrap.addEventListener("change", onQaChange);
+      // keep the text selection when clicking the cloze button
+      wrap.addEventListener("mousedown", (e) => { if (e.target.closest && e.target.closest("[data-qa-cloze]")) e.preventDefault(); });
+    }
+    const m = qaModel();
+    const deckOpts = QA.decks.map((d) => `<option value="${d.id}" ${d.id === QA.deck ? "selected" : ""}>${esc(d.name)}</option>`).join("")
+      + `<option value="__new">＋ ${t("qa_new_deck")}</option>`;
+    const ntOpts = QA.notetypes.map((n) => `<option value="${n.id}" ${n.id === QA.notetype ? "selected" : ""}>${esc(n.name)}</option>`).join("");
+    const fields = m.fields.map((f, i) => `<label class="qa-f"><span>${esc(f)}</span><div class="qa-in" contenteditable="true" role="textbox" aria-multiline="true" data-i="${i}" aria-label="${esc(f)}"></div></label>`).join("");
+    const recent = QA.recent.length
+      ? `<div class="qa-recent"><b>${t("qa_recent")}</b>${QA.recent.map((r) => `<div><i>✓</i>${esc(r)}</div>`).join("")}</div>` : "";
+    wrap.innerHTML = `<div class="qa-bg" data-qa-close></div>
+      <aside class="qa" role="dialog" aria-label="${esc(t("qa_title"))}">
+        <header><div><h2>${t("qa_title")}</h2><small>${t("qa_sub")}</small></div><button class="qa-x" data-qa-close aria-label="${esc(t("close"))}">✕</button></header>
+        <div class="qa-body">
+          <div class="qa-row">
+            <label class="qa-s"><span>${t("qa_deck")}</span><select data-qa="deck">${deckOpts}</select></label>
+            <label class="qa-s"><span>${t("qa_type")}</span><select data-qa="notetype">${ntOpts}</select></label>
+          </div>
+          <div class="qa-newdeck" hidden><input type="text" data-qa="newdeck" placeholder="${esc(t("qa_new_deck_ph"))}"><button class="btn" data-qa-mkdeck>${t("qa_create")}</button></div>
+          ${m.cloze ? `<div class="qa-tools"><button class="btn ghost" data-qa-cloze title="Ctrl+Shift+C">[…] ${t("qa_cloze")}</button></div>` : ""}
+          ${fields}
+          <label class="qa-f"><span>${t("qa_tags")}</span><input type="text" class="qa-tags" data-qa="tags" value="${esc(QA.tags || "")}" placeholder="${esc(t("qa_tags_ph"))}"></label>
+          <div class="qa-msg" aria-live="polite"></div>
+          ${recent}
+        </div>
+        <footer>
+          <button class="lnk" data-qa-full>${t("qa_full")} ↗</button>
+          <span class="qa-count">${QA.added ? plt(QA.added, "qa_added") : ""}</span>
+          <button class="btn qa-add" data-qa-add>${t("qa_add")} <kbd>Ctrl ↵</kbd></button>
+        </footer>
+      </aside>`;
+    focusFirstField();
+  }
+
+  function focusFirstField() {
+    const f = root.querySelector(".qa-in");
+    if (f) setTimeout(() => f.focus(), 30);
+  }
+
+  function qaMsg(text, kind) {
+    const el = root.querySelector(".qa-msg");
+    if (!el) return;
+    el.className = "qa-msg " + (kind || "");
+    el.textContent = text || "";
+  }
+
+  async function qaSubmit() {
+    if (!QA || QA.busy) return;
+    const ins = [...root.querySelectorAll(".qa-in")];
+    const fields = ins.map((e) => e.innerHTML);
+    const tagsEl = root.querySelector(".qa-tags");
+    QA.tags = tagsEl ? tagsEl.value : "";
+    QA.busy = true;
+    const res = await send("qa_add", { deck: QA.deck, notetype: QA.notetype, fields, tags: QA.tags });
+    QA.busy = false;
+    if (!res || !res.ok) {
+      SFX.no();
+      qaMsg(t(res && res.error === "cloze" ? "qa_err_cloze" : res && res.error === "empty" ? "qa_err_empty" : "qa_err"), "bad");
+      return;
+    }
+    SFX.pop();
+    QA.added = res.added;
+    QA.recent.unshift(res.preview || "…");
+    QA.recent = QA.recent.slice(0, 5);
+    renderQuickAdd();
+    qaMsg(res.duplicate ? t("qa_dup") : plt(res.cards, "qa_ok"), res.duplicate ? "warn" : "good");
+  }
+
+  async function closeQuickAdd() {
+    if (!QA) return;
+    const wrap = root.querySelector(".qa-wrap");
+    if (wrap) wrap.remove();
+    QA.open = false;
+    await send("qa_close");
+  }
+
+  function wrapCloze() {
+    const sel = (root.getSelection ? root.getSelection() : document.getSelection());
+    const field = document.activeElement && root.activeElement && root.activeElement.classList.contains("qa-in") ? root.activeElement : root.querySelector(".qa-in");
+    const all = [...root.querySelectorAll(".qa-in")].map((e) => e.innerText).join(" ");
+    const nums = [...all.matchAll(/\{\{c(\d+)::/g)].map((m) => Number(m[1]));
+    const n = (nums.length ? Math.max(...nums) : 0) + 1;
+    const text = sel && sel.toString() ? sel.toString() : "";
+    field.focus();
+    document.execCommand("insertText", false, `{{c${n}::${text}}}`);
+  }
+
+  async function onQaClick(e) {
+    const el = e.target.closest && e.target.closest("[data-qa-close],[data-qa-add],[data-qa-full],[data-qa-cloze],[data-qa-mkdeck]");
+    if (!el) return;
+    const d = el.dataset;
+    if ("qaClose" in d) return closeQuickAdd();
+    if ("qaAdd" in d) return qaSubmit();
+    if ("qaCloze" in d) return wrapCloze();
+    if ("qaFull" in d) { await closeQuickAdd(); send("qa_full"); return; }
+    if ("qaMkdeck" in d) {
+      const inp = root.querySelector('[data-qa="newdeck"]');
+      const res = await send("qa_new_deck", { name: inp ? inp.value : "" });
+      if (res && res.ok) {
+        if (!QA.decks.some((x) => x.id === res.deck.id)) QA.decks.push(res.deck);
+        QA.decks.sort((a, b) => a.name.localeCompare(b.name));
+        QA.deck = res.deck.id;
+        keepFieldsAndRender();
+        qaMsg(t("qa_deck_made", { name: res.deck.name }), "good");
+      } else qaMsg(t("qa_err"), "bad");
+    }
+  }
+
+  function keepFieldsAndRender() {
+    const vals = [...root.querySelectorAll(".qa-in")].map((e) => e.innerHTML);
+    const tagsEl = root.querySelector(".qa-tags"); if (tagsEl) QA.tags = tagsEl.value;
+    renderQuickAdd();
+    root.querySelectorAll(".qa-in").forEach((e, i) => { if (vals[i] !== undefined) e.innerHTML = vals[i]; });
+  }
+
+  function onQaChange(e) {
+    const which = e.target.dataset && e.target.dataset.qa;
+    if (which === "deck") {
+      if (e.target.value === "__new") {
+        const box = root.querySelector(".qa-newdeck"); box.hidden = false;
+        box.querySelector("input").focus();
+        e.target.value = String(QA.deck);
+        return;
+      }
+      QA.deck = Number(e.target.value);
+    } else if (which === "notetype") {
+      QA.notetype = Number(e.target.value);
+      keepFieldsAndRender();
+    }
+  }
+
+  function onQaKey(e) {
+    if (e.key === "Escape") { e.preventDefault(); closeQuickAdd(); return; }
+    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); qaSubmit(); return; }
+    if ((e.key === "C" || e.key === "c") && e.shiftKey && (e.ctrlKey || e.metaKey) && qaModel().cloze) { e.preventDefault(); wrapCloze(); return; }
+    if (e.key === "Enter" && e.target.dataset && e.target.dataset.qa === "newdeck") { e.preventDefault(); root.querySelector("[data-qa-mkdeck]").click(); }
+    e.stopPropagation(); // keep page-level shortcuts (S to study) out of the way while typing
+  }
+
+  function onQaPaste(e) {
+    if (!(e.target.classList && e.target.classList.contains("qa-in"))) return;
+    e.preventDefault(); // paste as plain text: no foreign fonts or colours in your notes
+    const text = (e.clipboardData || window.clipboardData).getData("text/plain");
+    document.execCommand("insertText", false, text);
+  }
+
   // =================================================================== DECK LIST: one-click study
   function enhanceDeckList() {
     const table = document.querySelector("table:has(tr.deck)") || (document.querySelector("tr.deck") || {}).closest?.("table");
@@ -754,6 +1022,9 @@
       .cr-cta b { display: block; font-size: 17px; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       .cr-cta small { color: var(--fg-subtle, #777); font-size: 13px; }
       .cr-cta .cr-study { font-size: 16px; padding: 12px 20px 12px 16px; }
+      .cr-add { font: 600 14px/1 "CookieRecallFredoka", ui-rounded, system-ui, sans-serif; border: 0; cursor: pointer; border-radius: 999px; padding: 11px 16px;
+        background: transparent; color: inherit; box-shadow: inset 0 0 0 1.5px var(--border, #ccc); white-space: nowrap; }
+      .cr-add:hover { background: var(--selected-bg, #eee); }
       .cr-cta kbd { font: inherit; font-size: 11px; padding: 1px 5px; border-radius: 5px; border: 1px solid var(--border, #ccc); margin-left: 4px; }`;
     document.head.appendChild(css);
     document.documentElement.style.setProperty("--cr-btn", (CFG.palette_vars || {})["--board"] || "#1e3b34");
@@ -789,18 +1060,21 @@
     const target = current && current.due > 0 ? current : best;
     const cta = document.createElement("div");
     cta.className = "cr-cta";
+    const addBtn = CFG.quick_add !== false ? `<button class="cr-add" data-qa-open title="${esc(t("qa_title"))}">＋ ${t("qa_short")}</button>` : "";
     cta.innerHTML = target
-      ? `<div class="t"><b>${esc(target.name)}</b><small>${esc(plt(target.due, "cards_due"))} · <kbd>S</kbd></small></div><button class="cr-study" data-did="${target.did}">▶ ${t("study_now")}</button>`
-      : `<div class="t"><b>${t("all_done")}</b><small>${t("all_done_sub")}</small></div>`;
+      ? `<div class="t"><b>${esc(target.name)}</b><small>${esc(plt(target.due, "cards_due"))} · <kbd>S</kbd></small></div>${addBtn}<button class="cr-study" data-did="${target.did}">▶ ${t("study_now")}</button>`
+      : `<div class="t"><b>${t("all_done")}</b><small>${t("all_done_sub")}</small></div>${addBtn}`;
     const anchor = table.closest("center") || table;
     anchor.parentNode.insertBefore(cta, anchor);
     cta.addEventListener("click", (e) => {
       const b = e.target.closest && e.target.closest(".cr-study");
       if (b) send("study", { did: Number(b.dataset.did) });
+      if (e.target.closest && e.target.closest("[data-qa-open]")) openQuickAdd();
     });
     if (target) {
       document.addEventListener("keydown", (e) => {
         if (e.key !== "s" && e.key !== "S") return;
+        if (QA && QA.open) return;
         if (e.metaKey || e.ctrlKey || e.altKey) return;
         const tag = (document.activeElement && document.activeElement.tagName) || "";
         if (/INPUT|TEXTAREA|SELECT/.test(tag)) return;
@@ -867,18 +1141,33 @@
     reward(p) { try { if (MODE === "hud" && CFG.hud !== false) hudReward(p); else S = p.snap; } catch (e) { console.error("Cookie Recall", e); } },
     update(snap) {
       try {
-        if (MODE === "bakery") updateBakery(snap);
+        if (MODE === "bakery") { if (snap && snap.buildings) updateBakery(snap); }
         else if (MODE === "hud" && CFG.hud !== false) updateHud(snap, false);
         else if (MODE === "mini") { S = snap; renderMini(); }
       } catch (e) { console.error("Cookie Recall", e); }
     },
     events(list) { try { handleEvents(list); } catch (e) { console.error("Cookie Recall", e); } },
+    openQuickAdd() { try { if (MODE === "bakery" || MODE === "mini") openQuickAdd(); else send("qa_full"); } catch (e) { send("qa_full"); } },
     scrollIntoView() { host.scrollIntoView({ behavior: RM() ? "auto" : "smooth", block: "start" }); },
   };
 
   try {
     if (MODE === "hud" || MODE === "card") cardStyle();
-    if (MODE === "bakery") { enhanceDeckList(); wireBakery(); renderBakery(); if (BOOT.scroll) setTimeout(() => window.CookieRecall.scrollIntoView(), 60); }
+    if (MODE === "bakery" && HOME) {
+      document.documentElement.classList.add("cr-home");
+      root.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && e.target.dataset && "newdeck" in e.target.dataset) { e.preventDefault(); root.querySelector("[data-mkdeck]").click(); }
+        if (e.key === "Escape" && homeNewDeck) { homeNewDeck = false; renderBakery(); }
+      });
+      document.addEventListener("keydown", (e) => {
+        if (e.metaKey || e.ctrlKey || e.altKey || (QA && QA.open)) return;
+        const path = e.composedPath ? e.composedPath() : [];
+        if (path.some((n) => n && /INPUT|TEXTAREA|SELECT/.test(n.tagName || "") || (n && n.isContentEditable))) return;
+        if (e.key === "s" || e.key === "S") { const b = root.querySelector(".cta [data-study]"); if (b) { e.preventDefault(); b.click(); } }
+        if (e.key === "a" || e.key === "A") { e.preventDefault(); openQuickAdd(); }
+      });
+    }
+    if (MODE === "bakery") { if (!HOME) enhanceDeckList(); wireBakery(); renderBakery(); if (BOOT.scroll) setTimeout(() => window.CookieRecall.scrollIntoView(), 60); }
     else if (MODE === "mini") renderMini();
     else if (MODE === "hud" && CFG.hud !== false && S) updateHud(S, false);
     if (BOOT.events && BOOT.events.length) setTimeout(() => handleEvents(BOOT.events), 350);

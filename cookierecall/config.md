@@ -13,6 +13,8 @@ Most of these can also be changed in the bakery, *Stats* tab.
 - `hud_goal` : barre « prochain achat » / "next purchase" bar.
 - `hud_tiny` : compteur réduit à l'icône / counter shrunk to its icon.
 - `reduced_motion` : animations réduites / reduced motion.
+- `full_home` : accueil tout-en-un : tes paquets, Ajouter, Parcourir, Statistiques et Synchroniser dans la boulangerie, à la place des barres d'Anki / all-in-one home: your decks, Add, Browse, Stats and Sync inside the bakery, replacing Anki's bars.
+- `quick_add` : « Ajouter » ouvre un panneau intégré au lieu d'une fenêtre séparée / "Add" opens a built-in panel instead of a separate window.
 - `show_bakery_on_home` : boulangerie sous la liste des paquets / bakery below the deck list.
 - `bakery_collapsed` : boulangerie repliée / collapsed bakery.
 - `toolbar_link` : lien « Cookie Recall » dans la barre du haut / "Cookie Recall" link in the top bar (redémarrage / restart).

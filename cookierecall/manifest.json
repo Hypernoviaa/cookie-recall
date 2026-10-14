@@ -1,6 +1,6 @@
 {
-    "package": "cookierecall",
-    "name": "Cookie Recall",
-    "min_point_version": 231000,
-    "human_version": "1.3.0"
+  "package": "cookierecall",
+  "name": "Cookie Recall",
+  "min_point_version": 231000,
+  "human_version": "1.4.0"
 }
