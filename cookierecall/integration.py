@@ -32,6 +32,7 @@ from aqt.reviewer import Reviewer
 from aqt.utils import askUser, tooltip
 
 from . import i18n, theme
+from . import palette as P
 from .game import Game, fmt_num
 
 MODULE = __name__
@@ -50,11 +51,13 @@ DEFAULT_CFG: dict[str, Any] = {
     "bakery_collapsed": False,
     "toolbar_link": True,
     "theme": True,
+    "palette": "pistachio",
+    "card_style": True,
     "language": "auto",
     "new_cards_full_reward_per_day": 50,
     "min_answer_seconds": 0.8,
 }
-UI_SETTINGS = {"sound", "hud", "hud_position", "hud_tiny", "reduced_motion", "bakery_collapsed", "hud_goal", "theme", "language"}
+UI_SETTINGS = {"sound", "hud", "hud_position", "hud_tiny", "reduced_motion", "bakery_collapsed", "hud_goal", "theme", "language", "palette", "card_style"}
 LANGUAGES = {"auto", "fr", "en"}
 POSITIONS = {"top-right", "top-left", "bottom-right", "bottom-left"}
 
@@ -187,7 +190,14 @@ class CookieRecall:
 
     def ui_cfg(self) -> dict:
         c = self.cfg()
-        return {k: c[k] for k in (*UI_SETTINGS, "volume", "new_cards_full_reward_per_day")}
+        out = {k: c[k] for k in (*UI_SETTINGS, "volume", "new_cards_full_reward_per_day")}
+        pid = P.valid(str(c.get("palette")))
+        out["palette"] = pid
+        out["palette_vars"] = P.bakery_vars(pid)
+        out["card_vars"] = P.card_vars(pid)
+        names = P.NAMES.get(i18n.LANG, P.NAMES["en"])
+        out["palettes"] = [{"id": k, "name": names[k], **P.swatch(k)} for k in P.PALETTES]
+        return out
 
     # ---- pushing to webviews
     def push_update(self, events: list[dict] | None = None) -> None:
@@ -308,7 +318,9 @@ def on_set_content(web_content, context) -> None:
         return
     cfg = F.cfg()
     if mode == "hud" and not cfg["hud"]:
-        return
+        if not cfg["card_style"]:
+            return
+        mode = "card"  # no counter, but still style the cards
     if mode == "bakery" and not cfg["show_bakery_on_home"]:
         return
     F.game.ensure_day(F.today())
@@ -375,9 +387,11 @@ def dispatch(data: dict, context: Any) -> dict:
             return {"ok": False}
         if key == "hud_position" and value not in POSITIONS:
             return {"ok": False}
+        if key == "palette" and value not in P.PALETTES:
+            return {"ok": False}
         if key == "language" and value not in LANGUAGES:
             return {"ok": False}
-        if key not in ("hud_position", "language"):
+        if key not in ("hud_position", "language", "palette"):
             value = bool(value)
         F.write_cfg(key, value)
         res = {"ok": True, "cfg": F.ui_cfg()}
@@ -386,10 +400,21 @@ def dispatch(data: dict, context: Any) -> dict:
             if isinstance(context, DeckBrowser):
                 mw.progress.single_shot(50, mw.deckBrowser.refresh)
             tooltip(i18n.msg("lang_restart"))
+        if key == "palette":
+            mw.progress.single_shot(80, lambda: theme.set_palette(value))
         if key == "theme":
             mw.progress.single_shot(50, lambda: theme.set_enabled(value))
         if key == "hud" and isinstance(context, DeckBrowser):
             tooltip(i18n.msg("hud_later"))
+    elif a == "study":
+        try:
+            did = int(data.get("did"))
+        except (TypeError, ValueError):
+            return {"ok": False}
+        if not mw.col.decks.get(did, default=False):
+            return {"ok": False}
+        mw.progress.single_shot(0, lambda: study_deck(did))
+        return {"ok": True}
     elif a == "open_bakery":
         mw.progress.single_shot(0, open_bakery)
         return {"ok": True}
@@ -402,6 +427,15 @@ def dispatch(data: dict, context: Any) -> dict:
 
 
 # --------------------------------------------------------------------------- UI entry points
+def study_deck(did: int) -> None:
+    """One click from the deck list straight into reviews (skips the overview screen)."""
+    if not mw.col:
+        return
+    mw.col.decks.select(did)
+    mw.col.startTimebox()
+    mw.moveToState("review")
+
+
 def open_bakery() -> None:
     if not mw.col:
         return
@@ -445,6 +479,7 @@ def apply_language() -> None:
 def on_config_updated(_conf: dict) -> None:
     F.apply_rules()
     apply_language()
+    theme._palette = P.valid(str(F.cfg().get("palette")))
     theme.set_enabled(F.cfg()["theme"])
 
 
@@ -454,7 +489,7 @@ def setup() -> None:
     apply_language()
     mw.addonManager.setWebExports(MODULE, r"web/(cookierecall\.(js|css)|strings\.js|theme\.css|img/.+\.svg|fonts/.+\.woff2)")
     mw.addonManager.setConfigUpdatedAction(MODULE, on_config_updated)
-    theme.setup(F.base, F.cfg()["theme"])
+    theme.setup(F.base, F.cfg()["theme"], F.cfg().get("palette", P.DEFAULT))
 
     gui_hooks.profile_did_open.append(on_profile_open)
     gui_hooks.profile_will_close.append(on_profile_close)

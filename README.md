@@ -12,11 +12,16 @@ English & French · Anki Desktop 23.10+ (tested on 26.9) · light and dark mode 
 - **While reviewing**: a small counter in a corner, with "+N" on every answer, your combo, your next purchase and the golden cookie to catch.
 - **On the deck list**: the full bakery, with the display shelves, the shop, daily missions, achievements, diplomas and stats.
 - **On a deck's page**: a one-line strip showing your cookies.
+- **One-click studying**: a "Study now" card above your decks (or press **S**) and a ▶ Study button on every deck row take you straight into reviews, no overview screen in between.
+- **Better-looking cards**: plain cards become a paper card on a soft desk, with a nicer font and coloured answer buttons. Cards with their own custom styling are left exactly as they are.
+- **5 colour palettes**: Pistachio, Raspberry, Blueberry, Chocolate and Lavender, for the bakery, the counter, the cards and the whole Anki theme (🎨 button on the awning).
 - **Cookie Recall theme**: re-skins all of Anki in the same universe (top bar, deck list, Add cards, Browser, Statistics, Deck options, menus). It never touches your card content and can be turned off in one click.
 
-| Review counter | Oven cleared jackpot | Theme: Add cards |
+| One-click study | Card style | Raspberry palette |
 |---|---|---|
-| ![](screenshots/review-hud-dark.png) | ![](screenshots/oven-cleared.png) | ![](screenshots/theme-add-cards.png) |
+| ![](screenshots/study-now.png) | ![](screenshots/card-style.png) | ![](screenshots/palette-raspberry.png) |
+| **Blueberry, dark mode** | **Oven cleared jackpot** | **Theme: Add cards** |
+| ![](screenshots/review-blueberry-dark.png) | ![](screenshots/oven-cleared.png) | ![](screenshots/theme-add-cards.png) |
 
 ## How the game works
 
@@ -53,7 +58,7 @@ Your game is saved in your collection and syncs through AnkiWeb. Add-ons don't r
 
 ## Settings
 
-In the bakery (*Stats* tab) or *Tools → Add-ons → Cookie Recall → Config*: language, theme, sounds, review counter and its position, reduced motion, collapsed bakery, anti-farm thresholds.
+In the bakery (*Stats* tab, or the 🎨 button) or *Tools → Add-ons → Cookie Recall → Config*: colour palette, card style, language, theme, sounds, review counter and its position, reduced motion, collapsed bakery, anti-farm thresholds.
 
 ## Development
 
@@ -65,6 +70,7 @@ cookierecall/
   i18n.py            English content and Python-side messages
   integration.py     Anki hooks, saving, pycmd bridge
   theme.py           theme for all of Anki (Qt + web pages + Svelte pages)
+  palette.py         the 5 colour palettes, everything else derived from them
   web/cookierecall.js   UI (review counter, bakery, strip) in a closed Shadow DOM
   web/strings.js     UI strings, French and English
   web/*.css, img/, fonts/   styles, 37 SVG stickers, Fredoka (OFL)

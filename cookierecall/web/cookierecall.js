@@ -117,6 +117,10 @@
     host.id = "cookierecall-root";
     document.body.appendChild(host);
   }
+  function applyPalette(vars) {
+    Object.entries(vars || {}).forEach(([k, v]) => host.style.setProperty(k, v));
+  }
+  applyPalette(CFG.palette_vars);
   const root = host.attachShadow({ mode: "closed" });
   root.innerHTML = `<link rel="stylesheet" href="${BASE}/cookierecall.css"><div id="app"></div><div class="tip" role="tooltip"></div><div class="toasts" aria-live="polite"></div>`;
   const app = root.getElementById("app");
@@ -584,7 +588,8 @@
       ${row(t("st_quests"), fmt(st.quests_done))}
       ${row(t("st_mult"), mult(S.mult.total))}
     </div>
-    <div class="settings"><h3>${t("settings")}</h3>
+    <div class="settings" id="settings"><h3>${t("settings")}</h3>
+      <div class="swatches"><span>${t("set_palette")}</span>${(CFG.palettes || []).map((p) => `<button class="sw" data-palette="${p.id}" aria-pressed="${(CFG.palette || "pistachio") === p.id}" title="${esc(p.name)}" aria-label="${esc(p.name)}"><i style="background:${p.board}"></i><i style="background:${p.accent}"></i></button>`).join("")}</div>
       ${tog("sound", t("set_sound"))}${tog("hud", t("set_hud"))}${tog("reduced_motion", t("set_motion"))}${tog("theme", t("set_theme"))}
       <button class="toggle" data-cycle-pos aria-pressed="true"><i></i>${t("set_pos", { x: t({ "top-right": "pos_tr", "top-left": "pos_tl", "bottom-right": "pos_br", "bottom-left": "pos_bl" }[CFG.hud_position || "top-right"]) })}</button>
       <button class="toggle" data-cycle-lang aria-pressed="true"><i></i>${t("set_lang", { x: t("lang_" + (CFG.language || "auto")) })}</button>
@@ -597,6 +602,7 @@
     const collapsed = !!CFG.bakery_collapsed;
     const head = `<header class="awning"><div class="stripes"></div><div class="scallops"></div>
       <div class="sign"><img src="${IMG("cookie")}" alt="">Cookie Recall</div>
+      ${collapsed ? "" : `<button class="paint" data-paint>${t("paint")}</button>`}
       <button class="collapse" data-collapse>${collapsed ? t("open") : t("collapse")}</button></header>`;
     if (collapsed) {
       app.innerHTML = `<div class="board ${RM() ? "calm" : ""}">${head}<div class="strip"><img src="${IMG("cookie")}" alt=""><div><div class="count num">${fmt(S.cookies)}</div><div class="unit">${t("strip_unit", { n: fmt(S.per_review_base) })}</div></div>
@@ -683,6 +689,17 @@
         return;
       }
       if (d.setting) { await act("setting", { key: d.setting, value: !CFG[d.setting] }); return; }
+      if (d.palette) {
+        const res = await act("setting", { key: "palette", value: d.palette });
+        if (res && res.ok) { applyPalette(CFG.palette_vars); renderBakery(); }
+        return;
+      }
+      if ("paint" in d) {
+        tab = "stats"; try { sessionStorage.setItem("cookierecall-tab", tab); } catch (x) {}
+        renderBakery();
+        const el2 = $("#settings"); if (el2) el2.scrollIntoView({ behavior: RM() ? "auto" : "smooth", block: "center" });
+        return;
+      }
       if ("cycleLang" in d) {
         const order = ["auto", "fr", "en"];
         const next = order[(order.indexOf(CFG.language || "auto") + 1) % order.length];
@@ -695,6 +712,138 @@
         await act("setting", { key: "hud_position", value: next });
       }
     });
+  }
+
+
+  // =================================================================== DECK LIST: one-click study
+  function enhanceDeckList() {
+    const table = document.querySelector("table:has(tr.deck)") || (document.querySelector("tr.deck") || {}).closest?.("table");
+    if (!table || table.dataset.crDone) return;
+    table.dataset.crDone = "1";
+    const css = document.createElement("style");
+    css.id = "cr-decklist";
+    css.textContent = `
+      .cr-study { font: 600 13px/1 "CookieRecallFredoka", ui-rounded, system-ui, sans-serif; border: 0; cursor: pointer; border-radius: 999px;
+        padding: 7px 13px 7px 11px; margin: 0 2px; color: #fff; background: var(--cr-btn, #1e3b34); white-space: nowrap;
+        box-shadow: 0 2px 0 rgba(0,0,0,.18); transition: transform .12s, filter .12s; }
+      .cr-study:hover { transform: translateY(-1px); filter: brightness(1.12); }
+      .cr-study:active { transform: translateY(1px); box-shadow: none; }
+      .cr-study:focus-visible { outline: 3px solid #f5c542; outline-offset: 2px; }
+      .cr-done { font: 600 12px/1 "CookieRecallFredoka", ui-rounded, system-ui, sans-serif; color: var(--fg-faint, #999); padding: 0 10px; white-space: nowrap; }
+      td.cr-cell { text-align: end; padding-inline: 6px !important; }
+      .cr-cta { display: flex; align-items: center; gap: 14px; max-width: 520px; margin: 18px auto 14px; padding: 10px 10px 10px 18px;
+        border-radius: 18px; background: var(--canvas-elevated, #fff); border: 1px solid var(--border-subtle, #e5e5e5);
+        box-shadow: 0 10px 24px -18px rgba(0,0,0,.45); text-align: start; font-family: "CookieRecallFredoka", ui-rounded, system-ui, sans-serif; }
+      .cr-cta .t { flex: 1; min-width: 0; }
+      .cr-cta b { display: block; font-size: 17px; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .cr-cta small { color: var(--fg-subtle, #777); font-size: 13px; }
+      .cr-cta .cr-study { font-size: 16px; padding: 12px 20px 12px 16px; }
+      .cr-cta kbd { font: inherit; font-size: 11px; padding: 1px 5px; border-radius: 5px; border: 1px solid var(--border, #ccc); margin-left: 4px; }`;
+    document.head.appendChild(css);
+    document.documentElement.style.setProperty("--cr-btn", (CFG.palette_vars || {})["--board"] || "#1e3b34");
+
+    const headRow = table.querySelector("tr:first-child");
+    const optsTh = headRow && headRow.querySelector("th.optscol");
+    if (optsTh) { const th = document.createElement("th"); optsTh.before(th); }
+    let best = null, current = null;
+    table.querySelectorAll("tr.deck").forEach((tr) => {
+      const did = Number(tr.id);
+      const counts = [...tr.querySelectorAll(".new-count, .learn-count, .review-count")].map((e) => Number(e.textContent) || 0);
+      const due = counts.reduce((a, b) => a + b, 0);
+      const name = (tr.querySelector("a.deck") || {}).textContent || "";
+      const td = document.createElement("td");
+      td.className = "cr-cell";
+      td.innerHTML = due > 0
+        ? `<button class="cr-study" data-did="${did}" title="${esc(t("study_tip"))}">▶ ${t("study")}</button>`
+        : `<span class="cr-done">✓ ${t("up_to_date")}</span>`;
+      const opts = tr.querySelector("td.opts");
+      if (opts) opts.before(td); else tr.appendChild(td);
+      const info = { did, due, name };
+      if (tr.classList.contains("current")) current = info;
+      if (due > 0 && (!best || due > best.due)) best = info;
+    });
+    table.addEventListener("click", (e) => {
+      const b = e.target.closest && e.target.closest(".cr-study");
+      if (!b) return;
+      e.preventDefault(); e.stopPropagation();
+      send("study", { did: Number(b.dataset.did) });
+    });
+
+    // big call to action above the deck list
+    const target = current && current.due > 0 ? current : best;
+    const cta = document.createElement("div");
+    cta.className = "cr-cta";
+    cta.innerHTML = target
+      ? `<div class="t"><b>${esc(target.name)}</b><small>${esc(plt(target.due, "cards_due"))} · <kbd>S</kbd></small></div><button class="cr-study" data-did="${target.did}">▶ ${t("study_now")}</button>`
+      : `<div class="t"><b>${t("all_done")}</b><small>${t("all_done_sub")}</small></div>`;
+    const anchor = table.closest("center") || table;
+    anchor.parentNode.insertBefore(cta, anchor);
+    cta.addEventListener("click", (e) => {
+      const b = e.target.closest && e.target.closest(".cr-study");
+      if (b) send("study", { did: Number(b.dataset.did) });
+    });
+    if (target) {
+      document.addEventListener("keydown", (e) => {
+        if (e.key !== "s" && e.key !== "S") return;
+        if (e.metaKey || e.ctrlKey || e.altKey) return;
+        const tag = (document.activeElement && document.activeElement.tagName) || "";
+        if (/INPUT|TEXTAREA|SELECT/.test(tag)) return;
+        e.preventDefault();
+        send("study", { did: target.did });
+      });
+    }
+  }
+
+  // =================================================================== REVIEW SCREEN: card style
+  function cardStyle() {
+    if (!CFG.card_style) return;
+    const v = CFG.card_vars || {};
+    const st = document.createElement("style");
+    st.id = "cr-card";
+    st.textContent = `
+      html.cr-card { ${Object.entries(v).map(([k, x]) => `${k}:${x}`).join(";")} }
+      html.cr-card, html.cr-card body.card { background: var(--cr-desk) !important; }
+      html.cr-card body.card { color: var(--cr-ink) !important; margin: 0 !important; padding: 26px 18px 48px !important; }
+      html.cr-card #qa { position: relative; max-width: 720px; margin: 16px auto 0; padding: 40px 44px 44px; border-radius: 24px;
+        background: var(--cr-paper); line-height: 1.55; min-height: 96px;
+        box-shadow: 0 0 0 1px var(--cr-line), 0 18px 40px -24px rgba(60, 40, 20, .45); }
+      html.cr-card #qa::before { content: ""; position: absolute; left: 32px; right: 32px; top: 0; height: 6px; border-radius: 0 0 8px 8px;
+        background: repeating-linear-gradient(90deg, var(--cr-accent) 0 16px, transparent 16px 32px); opacity: .95; }
+      html.cr-card #qa hr#answer, html.cr-card #qa hr { border: 0; height: 0; background: none; border-top: 2px dashed var(--cr-line); margin: 28px -10px; }
+      html.cr-card #qa img { border-radius: 12px; }
+      html.cr-card #typeans { border-radius: 12px; border: 1.5px solid var(--cr-line); padding: 10px 14px; background: var(--cr-desk); color: inherit; }
+      html.cr-card .replay-button svg circle { fill: var(--cr-accent); stroke: transparent; }
+      html.cr-card .replay-button svg path { fill: #fff; }
+      html.cr-card body.card.nightMode, html.cr-card.night-mode body.card { background: var(--cr-desk-dark) !important; color: var(--cr-ink-dark) !important; }
+      html.cr-card.night-mode { background: var(--cr-desk-dark) !important; }
+      html.cr-card.night-mode #qa, html.cr-card body.nightMode #qa { background: var(--cr-paper-dark); box-shadow: 0 0 0 1px var(--cr-line-dark), 0 18px 40px -24px rgba(0,0,0,.7); }
+      html.cr-card.night-mode #qa hr, html.cr-card body.nightMode #qa hr { border-top-color: var(--cr-line-dark); }
+      html.cr-font body.card { font-family: "CookieRecallFredoka", ui-rounded, "Segoe UI", system-ui, sans-serif !important; font-size: 22px; }
+      @media (max-width: 640px) { html.cr-card #qa { padding: 30px 20px 32px; border-radius: 18px; } }`;
+    document.head.appendChild(st);
+    const html = document.documentElement;
+    const probe = document.createElement("div");
+    probe.style.cssText = "position:absolute;visibility:hidden;background:var(--canvas)";
+    function check() {
+      // look at the note type's own styling, without ours
+      html.classList.remove("cr-card", "cr-font");
+      const cs = getComputedStyle(document.body);
+      document.body.appendChild(probe);
+      const canvas = getComputedStyle(probe).backgroundColor;
+      probe.remove();
+      const bg = cs.backgroundColor;
+      const plainBg = cs.backgroundImage === "none" && ["rgb(255, 255, 255)", "rgba(0, 0, 0, 0)", "transparent", canvas].includes(bg);
+      const fg = cs.color;
+      const plainFg = ["rgb(0, 0, 0)", "rgb(2, 2, 2)"].includes(fg) || document.body.classList.contains("nightMode");
+      const font = cs.fontFamily.toLowerCase().replace(/["']/g, "").trim();
+      const plainFont = font === "arial" || font.startsWith("arial,") || font === "";
+      if (plainBg && plainFg) html.classList.add("cr-card");
+      if (plainBg && plainFg && plainFont) html.classList.add("cr-font");
+    }
+    const qa = document.getElementById("qa");
+    if (qa) new MutationObserver(check).observe(qa, { childList: true });
+    new MutationObserver(check).observe(document.body, { attributes: true, attributeFilter: ["class"] });
+    check();
   }
 
   // =================================================================== public API
@@ -712,9 +861,10 @@
   };
 
   try {
-    if (MODE === "bakery") { wireBakery(); renderBakery(); if (BOOT.scroll) setTimeout(() => window.CookieRecall.scrollIntoView(), 60); }
+    if (MODE === "hud" || MODE === "card") cardStyle();
+    if (MODE === "bakery") { enhanceDeckList(); wireBakery(); renderBakery(); if (BOOT.scroll) setTimeout(() => window.CookieRecall.scrollIntoView(), 60); }
     else if (MODE === "mini") renderMini();
-    else if (CFG.hud !== false && S) updateHud(S, false);
+    else if (MODE === "hud" && CFG.hud !== false && S) updateHud(S, false);
     if (BOOT.events && BOOT.events.length) setTimeout(() => handleEvents(BOOT.events), 350);
   } catch (e) { console.error("Cookie Recall", e); }
   }

@@ -2,6 +2,15 @@
    {name} placeholders are filled by t(); values may contain simple HTML. */
 window.COOKIERECALL_STRINGS = {
   fr: {
+    study: "Réviser",
+    study_tip: "Commencer la révision de ce paquet",
+    up_to_date: "à jour",
+    study_now: "Réviser",
+    cards_due_one: "{n} carte à réviser", cards_due_many: "{n} cartes à réviser",
+    all_done: "Tout est à jour 🎉",
+    all_done_sub: "Plus aucune carte à réviser aujourd'hui. Reviens demain !",
+    paint: "🎨 Couleurs",
+    set_palette: "Couleur de la boulangerie",
     cookies: "cookies",
     day_one: "jour", day_many: "jours",
     review_one: "révision", review_many: "révisions",
@@ -125,6 +134,15 @@ window.COOKIERECALL_STRINGS = {
     freeze_bought_b: "Ta série est protégée pour un jour manqué.",
   },
   en: {
+    study: "Study",
+    study_tip: "Start reviewing this deck",
+    up_to_date: "done",
+    study_now: "Study now",
+    cards_due_one: "{n} card due", cards_due_many: "{n} cards due",
+    all_done: "All caught up 🎉",
+    all_done_sub: "No cards left to review today. Come back tomorrow!",
+    paint: "🎨 Colours",
+    set_palette: "Bakery colour",
     cookies: "cookies",
     day_one: "day", day_many: "days",
     review_one: "review", review_many: "reviews",

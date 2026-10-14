@@ -1,7 +1,7 @@
 /* Cookie Recall theme — component rules. Colours come from the CSS variables
    injected next to this file (same tokens as the Qt windows). */
 
-html { background-color: var(--canvas); min-height: 100%; }
+html { background-color: var(--canvas); }
 /* some pages paint <body> with a colour computed before the theme loads */
 html body:not(.card) { background-color: var(--canvas) !important; }
 html body {
@@ -24,7 +24,7 @@ body.fancy .toolbar, .toolbar {
 }
 .toolbar::before { /* thin awning strip */
   content: ""; position: absolute; left: 0; right: 0; top: 0; height: 4px;
-  background: repeating-linear-gradient(90deg, #8dbf6a 0 18px, #fff4df 18px 36px);
+  background: repeating-linear-gradient(90deg, var(--cr-accent, #8dbf6a) 0 18px, #fff4df 18px 36px);
   opacity: .95;
 }
 .hitem, body.fancy .hitem { border-radius: 999px; font-weight: 550; transition: background .15s, color .15s; }
@@ -55,9 +55,9 @@ h3 { font-weight: 650; }
 #study {
   border-radius: 999px; padding: 8px 22px; font-weight: 600; border: 0;
   background: linear-gradient(var(--button-primary-gradient-start), var(--button-primary-gradient-end));
-  box-shadow: 0 4px 0 color-mix(in srgb, var(--button-primary-bg) 60%, black);
+  box-shadow: 0 4px 0 rgba(0, 0, 0, .28);
 }
-#study:active { transform: translateY(2px); box-shadow: 0 2px 0 color-mix(in srgb, var(--button-primary-bg) 60%, black); }
+#study:active { transform: translateY(2px); box-shadow: 0 2px 0 rgba(0, 0, 0, .28); }
 .descfont, .description { color: var(--fg-subtle); }
 
 /* ------------------------------------------------------------ buttons everywhere */
@@ -73,3 +73,25 @@ button, .btn, input[type="button"], input[type="submit"] { border-radius: 10px; 
 .label-name, .field-state, .collapse-label { color: var(--fg-subtle); }
 input:not([type=checkbox]):not([type=radio]), select, textarea { border-radius: 9px; }
 ::selection { background: var(--highlight-bg); color: var(--highlight-fg); }
+
+/* ------------------------------------------------------------ deck list rows */
+tr.deck td { padding-top: 7px; padding-bottom: 7px; }
+tr.deck a.deck { font-size: 15.5px; }
+
+/* ------------------------------------------------------------ review answer buttons (bottom bar) */
+#outer { background: var(--canvas); }
+#outer button, #ansbut {
+  border-radius: 14px; border: 0; padding: 9px 18px; min-width: 92px; font-weight: 600; font-size: 14.5px;
+  background: var(--canvas-elevated); color: var(--fg);
+  box-shadow: 0 0 0 1px var(--border), 0 3px 0 var(--border-strong);
+  transition: transform .1s, box-shadow .1s, filter .1s;
+}
+#outer button:hover { filter: brightness(1.04); transform: translateY(-1px); }
+#outer button:active { transform: translateY(2px); box-shadow: 0 0 0 1px var(--border), 0 1px 0 var(--border-strong); }
+#outer #ansbut { min-width: 220px; background: var(--button-primary-bg); color: #fff; box-shadow: 0 3px 0 rgba(0, 0, 0, .28); }
+button[data-ease] { color: #fff !important; box-shadow: 0 3px 0 rgba(0, 0, 0, .25) !important; }
+button[data-ease="1"] { background: #d9485c !important; }
+button[data-ease="2"] { background: #e08a2c !important; }
+button[data-ease="3"] { background: #4f9a46 !important; }
+button[data-ease="4"] { background: #3f86c4 !important; }
+button[data-ease] .nobold, button[data-ease] .stattxt { color: var(--fg-subtle); font-weight: 500; }

@@ -4,6 +4,8 @@ La plupart de ces réglages se changent aussi dans la boulangerie, onglet *Stati
 Most of these can also be changed in the bakery, *Stats* tab.
 
 - `language` : `"auto"` (comme Anki / same as Anki), `"fr"` ou/or `"en"`.
+- `palette` : `"pistachio"`, `"raspberry"`, `"blueberry"`, `"chocolate"` ou/or `"lavender"`.
+- `card_style` : fiche papier pour les cartes au style par défaut / paper-card style for cards using the default styling.
 - `theme` : habille tout Anki aux couleurs de la boulangerie, sans jamais toucher au contenu des cartes. / Re-skins all of Anki in the bakery colours, never touching card content.
 - `sound` : sons / sounds (`true` / `false`). `volume` : `0` → `1`.
 - `hud` : compteur pendant les révisions / counter during reviews.

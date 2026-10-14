@@ -12,5 +12,7 @@
     "new_cards_full_reward_per_day": 50,
     "min_answer_seconds": 0.8,
     "theme": true,
-    "language": "auto"
+    "language": "auto",
+    "palette": "pistachio",
+    "card_style": true
 }

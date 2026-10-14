@@ -25,6 +25,8 @@ from pathlib import Path
 from aqt import colors, gui_hooks, mw
 from aqt.theme import theme_manager
 
+from . import palette as P
+
 WEB_DIR = Path(__file__).parent / "web"
 
 # token: (light "Boulangerie de jour", dark "Boulangerie de nuit")
@@ -75,6 +77,7 @@ TOKENS: dict[str, tuple[str, str]] = {
 
 _ORIGINAL: dict[str, tuple[str, str]] = {}
 _enabled = False
+_palette = P.DEFAULT
 _base = ""
 
 
@@ -82,10 +85,17 @@ def _css_name(token: str) -> str:
     return "--" + token.lower().replace("_", "-")
 
 
+def active_tokens() -> dict[str, tuple[str, str]]:
+    return P.anki_tokens(_palette, TOKENS)
+
+
 def css_vars() -> str:
     """CSS variables for both themes, with enough specificity to beat Anki's own."""
-    light = ";".join(f"{_css_name(k)}:{v[0]}" for k, v in TOKENS.items())
-    dark = ";".join(f"{_css_name(k)}:{v[1]}" for k, v in TOKENS.items())
+    toks = active_tokens()
+    _board, accent, accent_d, _light, _ink = P.PALETTES[P.valid(_palette)]
+    extra = f";--cr-accent:{accent};--cr-accent-d:{accent_d}"
+    light = ";".join(f"{_css_name(k)}:{v[0]}" for k, v in toks.items()) + extra
+    dark = ";".join(f"{_css_name(k)}:{v[1]}" for k, v in toks.items()) + extra
     return f":root:root{{{light}}}:root.night-mode:root{{{dark}}}"
 
 
@@ -105,7 +115,7 @@ def full_css() -> str:
 
 # ------------------------------------------------------------------ Qt layer
 def _swap_tokens(enabled: bool) -> None:
-    for name, (light, dark) in TOKENS.items():
+    for name, (light, dark) in active_tokens().items():
         token = getattr(colors, name, None)
         if not isinstance(token, dict) or "light" not in token:
             continue  # token not present in this Anki version: skip quietly
@@ -179,13 +189,20 @@ def on_inject_style(webview) -> None:
 
 
 # ------------------------------------------------------------------ public
-def setup(base: str, enabled: bool) -> None:
-    global _base
+def setup(base: str, enabled: bool, palette_id: str = P.DEFAULT) -> None:
+    global _base, _palette
     _base = base
+    _palette = P.valid(palette_id)
     gui_hooks.style_did_init.append(_safe_filter(on_style_init))
     gui_hooks.webview_will_set_content.append(_safe(on_set_content))
     gui_hooks.webview_did_inject_style_into_page.append(_safe(on_inject_style))
     set_enabled(enabled, refresh=True)
+
+
+def set_palette(palette_id: str) -> None:
+    global _palette
+    _palette = P.valid(palette_id)
+    set_enabled(_enabled, refresh=True)
 
 
 def set_enabled(enabled: bool, refresh: bool = True) -> None:
